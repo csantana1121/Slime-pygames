@@ -129,15 +129,16 @@ walkCount = 0
 
 def GameWindow():
 	global walkCount
-	win.blit(background,(0,0))
+	display.blit(background,(0,0))
 	#if walkCount + 1 >= 27
 	if left:
-		win.blit(leftSprite,(x,y))
+		display.blit(leftSprite,(x,y))
 		print("here")
 	elif right:
-		win.blit(rightSprite,(x,y))
+		display.blit(rightSprite,(x,y))
 	else:
-		win.blit(rightSprite,(x,y))
+		display.blit(rightSprite,(x,y))
+	win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
 	pygame.display.update()
 
 run_menu()
