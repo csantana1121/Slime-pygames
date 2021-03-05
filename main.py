@@ -2,9 +2,9 @@ import pygame
 pygame.init()
 win = pygame.display.set_mode((500,500))
 pygame.display.set_caption("Game")
-background = pygame.image.load('/Users/salpecoraro/Downloads/background.jpg')
-rightSprite = pygame.image.load('/Users/salpecoraro/Downloads/SlimePreview-2.png')
-leftSprite = pygame.image.load('/Users/salpecoraro/Downloads/image-2.png')
+background = pygame.image.load('Data/background.jpg')
+rightSprite = pygame.image.load('Data/rightSprite.png')
+leftSprite = pygame.image.load('Data/image-2.png')
 
 x = 200
 y = 200
