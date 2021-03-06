@@ -115,10 +115,11 @@ def run_menu():
 		win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
 		pygame.display.update()
 
-x = 200
-y = 200
-width = 64
 height = 64
+x = 0
+y = display_dimensions[1]-height
+width = 64
+
 
 vel = 5
 isJump = False
@@ -130,10 +131,8 @@ walkCount = 0
 def GameWindow():
 	global walkCount
 	display.blit(background,(0,0))
-	#if walkCount + 1 >= 27
 	if left:
 		display.blit(leftSprite,(x,y))
-		print("here")
 	elif right:
 		display.blit(rightSprite,(x,y))
 	else:
@@ -155,7 +154,7 @@ while run:
 		x -= vel
 		left = True
 		right = False
-	elif keys[pygame.K_RIGHT] and x < 500 - width - vel:
+	elif keys[pygame.K_RIGHT] and x < display_dimensions[0] - width - vel:
 		x += vel
 		left = False
 		right = True
