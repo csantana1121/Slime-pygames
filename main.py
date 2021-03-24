@@ -4,7 +4,7 @@ import sys
 import Data.text as text
 pygame.init()
 global display_dimensions, scale 
-scale = 3
+scale = 5
 display_dimensions = [384,216]
 display = pygame.Surface(display_dimensions)
 
@@ -51,6 +51,7 @@ def swap_color(img,old_c,new_c):
 
 global font
 font = text.generate_font('Data/small_font.png',font_dat, 5, 8, (248, 248, 248))
+font_3 = text.generate_font('Data/small_font.png',font_dat,5,8,(16,30,41))
 
 pygame.display.set_caption("Game")
 background = pygame.image.load('Data/background.jpg')
@@ -104,6 +105,7 @@ def run_menu():
 				run = False
 			if menu_choice == 'Options':
 				print('Work in progress!')
+				make_menu('options')
 		if pressed_right:
 			selection += 1
 			if selection >= len(menu_layout):
@@ -114,6 +116,152 @@ def run_menu():
 				selection = 2
 		win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
 		pygame.display.update()
+
+def make_menu(menu_id):
+	global up_key, down_key, right_key, left_key, hand_key, select_key, enter_key, pause_key, scale, win
+	global display_dimensions
+	options_bar = pygame.image.load('Data/options_bar.png')
+	wide_bar = pygame.image.load('Data/wide_bar.png')
+	wide = False
+	if menu_id == 'pause' :
+		menu_options = ['Resume','Exit to Main Menu']
+		menu_title = 'Paused'
+	if menu_id == 'options':
+		menu_options = ['Video','Keybinds','Back']
+		menu_title = 'Options'
+	if menu_id == 'video':
+		menu_options = ['384x216','768x432','1152x648','1536x684','1920x1080', 'Fullscreen','Back']
+		menu_title = 'Video Settings'
+	if menu_id == 'keyboard':
+		menu_options = ['Left: ','Right: ','Up/Jump: ','Down: ','Hand: ','Select: ','Pause: ','Back']
+		wide = True
+		menu_title = 'Keyboard Settings'
+		key_order = [left_key,right_key,up_key,down_key,hand_key,select_key,pause_key]
+	setting_key = 0
+	current_selection = 0
+	running = True 
+	return_val = None
+
+	while running:
+		display.blit(background,(0,0))
+		title_surf = pygame.Surface((display_dimensions[0],14))
+		title_surf.fill((50,60,95))
+		display.blit(title_surf,(0,24))
+		text.show_text(menu_title,int((display_dimensions[0]-get_text_width(menu_title,1))/2),28,1,999,font,display)
+		n = 0
+		for option in menu_options:
+			bar_img = options_bar.copy()
+			if wide:
+				bar_img = wide_bar.copy()
+			if n == current_selection:
+				bar_img = swap_color(bar_img,(50,60,95),(94,115,166))
+			display.blit(bar_img,(26,50+n*20))
+			ending = ''
+			if menu_id == 'keyboard':
+				if n <=6:
+					ending =pygame.key.name(key_order[n])
+				if (setting_key == 1) and (current_selection == n):
+					ending = 'press a key'
+			text.show_text(option+ending,31,54+n*20,1,999,font,display)
+			if menu_id == 'video':
+				if option == 'Fullscreen':
+					if n == current_selection:
+						text.show_text('Scaling is affected by windowed resolution.',131,55+n*20,1,999,font_3,display)
+						text.show_text('Scaling is affected by windowed resolution.',130,54+n*20,1,999,font,display)
+				if option == '1920x1080':
+					if n == current_selection:
+						text.show_text('This may lag.',131,55+n*20,1,999,font_3,display)
+						text.show_text('This may lag.',130,54+n*20,1,999,font,display)
+			n += 1
+		pressed_select = False
+		pressed_up = False
+		pressed_down = False
+		if setting_key == 0:
+			for event in pygame.event.get():
+				if event.type == QUIT:
+					pygame.quit()
+					sys.exit()
+				if event.type == KEYDOWN:
+					if event.key in [select_key,enter_key]:
+						pressed_select = True
+					if event.key == right_key:
+						pressed_right = True
+					if event.key == left_key:
+						pressed_left = True
+					if event.key == up_key:
+						pressed_up = True
+					if event.key == down_key:
+						pressed_down = True
+		if setting_key == 0:
+			if pressed_select:
+				chosen_option = menu_options[current_selection]
+				if menu_id == 'pause':
+					if chosen_option == 'Resume':
+						running = False
+						return_val = False
+					if chosen_option == 'Exit to Main Menu':
+						running = False
+						return_val = False
+				if menu_id == 'options':
+					if chosen_option == 'Video':
+						make_menu('video')
+					if chosen_option == 'Keybinds':
+						make_menu('keyboard')
+					if chosen_option == 'Back':
+						running = False
+				if menu_id == 'video':
+					if chosen_option == 'Back':
+						running = False
+					elif chosen_option == 'Fullscreen':
+						fullscreened = 'y'
+						win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),pygame.FULLSCREEN)
+					else:
+						fullscreened = 'n'
+						scale = current_selection + 1
+						win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
+				if menu_id == 'keyboard':
+					if chosen_option == 'Back':
+						running = False
+					else:
+						setting_key = 1
+			if pressed_down:
+				current_selection += 1
+				if current_selection >= len(menu_options):
+					current_selection = 0
+			if pressed_up:
+				current_selection -= 1
+				if current_selection < 0:
+					current_selection = len(menu_options)-1
+		else:
+			for event in pygame.event.get():
+				if event.type == KEYDOWN:
+					setting_key = 0
+					if event.key not in key_order:
+						if current_selection == 0:
+							left_key = event.key
+						if current_selection == 1:
+							right_key = event.key
+						if current_selection == 2:
+							up_key = event.key
+						if current_selection == 3:
+							down_key = event.key
+						if current_selection == 4:
+							hand_key = event.key
+						if current_selection == 5:
+							select_key = event.key
+						if current_selection == 6:
+							pause_key = event.key
+					key_order = [left_key,right_key,up_key,down_key,hand_key,select_key,pause_key]
+				if event.type == QUIT:
+					pygame.quit()
+					sys.exit()
+		win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
+		pygame.display.update()
+					
+
+
+
+
 
 x = 200
 y = 200
