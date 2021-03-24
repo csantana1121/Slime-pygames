@@ -55,8 +55,8 @@ font_3 = text.generate_font('Data/small_font.png',font_dat,5,8,(16,30,41))
 
 pygame.display.set_caption("Game")
 background = pygame.image.load('Data/background.jpg')
-rightSprite = pygame.image.load('Data/rightSprite.png')
-leftSprite = pygame.image.load('Data/image-2.png')
+rightSprite = pygame.image.load('Data/walk.gif')
+leftSprite = pygame.image.load('Data/walk.gif')
 
 
 def run_menu():
@@ -264,8 +264,8 @@ def make_menu(menu_id):
 
 
 
-x = 200
-y = 200
+x = 100
+y = 100
 width = 64
 height = 64
 
