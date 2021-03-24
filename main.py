@@ -202,6 +202,7 @@ def make_menu(menu_id):
 					if chosen_option == 'Exit to Main Menu':
 						running = False
 						return_val = False
+						run_menu()
 				if menu_id == 'options':
 					if chosen_option == 'Video':
 						make_menu('video')
@@ -294,9 +295,11 @@ run = True
 while run:
 	pygame.time.delay(30)
 	for event in pygame.event.get():
-		 if event.type == pygame.QUIT:
+		if event.type == pygame.QUIT:
 			 run = False
-
+		if event.type == KEYDOWN:
+			if event.key == pause_key:
+				make_menu('pause')
 	keys = pygame.key.get_pressed()
 
 	if keys[pygame.K_LEFT] and x > 0:
