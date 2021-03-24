@@ -9,13 +9,13 @@ display_dimensions = [384,216]
 display = pygame.Surface(display_dimensions)
 
 win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
-global up_key, down_key, right_key, left_key, hand_key, select_key, pause_key, c_scheme
+global up_key, down_key, right_key, left_key, power_key, select_key, pause_key, c_scheme
 up_key = K_UP
 down_key = K_DOWN
 right_key = K_RIGHT
 left_key = K_LEFT
-hand_key = K_z
-select_key = K_x
+power_key = K_z
+select_key = K_RETURN
 pause_key = K_ESCAPE
 enter_key = K_RETURN
 
@@ -60,7 +60,7 @@ leftSprite = pygame.image.load('Data/image-2.png')
 
 
 def run_menu():
-	global up_key, down_key, right_key, left_key, hand_key, select_key, enter_key
+	global up_key, down_key, right_key, left_key, power_key, select_key, enter_key
 	menu_bar = pygame.image.load('Data/menu_bar.png')
 	selection = 0
 	menu_layout = ['Play', 'Options', 'Quit']
@@ -118,7 +118,7 @@ def run_menu():
 		pygame.display.update()
 
 def make_menu(menu_id):
-	global up_key, down_key, right_key, left_key, hand_key, select_key, enter_key, pause_key, scale, win
+	global up_key, down_key, right_key, left_key, power_key, select_key, enter_key, pause_key, scale, win
 	global display_dimensions
 	options_bar = pygame.image.load('Data/options_bar.png')
 	wide_bar = pygame.image.load('Data/wide_bar.png')
@@ -133,10 +133,10 @@ def make_menu(menu_id):
 		menu_options = ['384x216','768x432','1152x648','1536x684','1920x1080', 'Fullscreen','Back']
 		menu_title = 'Video Settings'
 	if menu_id == 'keyboard':
-		menu_options = ['Left: ','Right: ','Up/Jump: ','Down: ','Hand: ','Select: ','Pause: ','Back']
+		menu_options = ['Left: ','Right: ','Up/Jump: ','Down: ','Use Special: ','Select: ','Pause: ','Back']
 		wide = True
 		menu_title = 'Keyboard Settings'
-		key_order = [left_key,right_key,up_key,down_key,hand_key,select_key,pause_key]
+		key_order = [left_key,right_key,up_key,down_key,power_key,select_key,pause_key]
 	setting_key = 0
 	current_selection = 0
 	running = True 
@@ -246,12 +246,12 @@ def make_menu(menu_id):
 						if current_selection == 3:
 							down_key = event.key
 						if current_selection == 4:
-							hand_key = event.key
+							power_key = event.key
 						if current_selection == 5:
 							select_key = event.key
 						if current_selection == 6:
 							pause_key = event.key
-					key_order = [left_key,right_key,up_key,down_key,hand_key,select_key,pause_key]
+					key_order = [left_key,right_key,up_key,down_key,power_key,select_key,pause_key]
 				if event.type == QUIT:
 					pygame.quit()
 					sys.exit()
