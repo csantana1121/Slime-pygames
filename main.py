@@ -37,6 +37,40 @@ select_key = K_RETURN
 pause_key = K_ESCAPE
 enter_key = K_RETURN
 
+def load_controls():
+	global up_key, down_key, right_key, left_key, power_key, select_key, pause_key, c_scheme
+	f = open('Data/control_settings.txt','r')
+	dat = f.read()
+	f.close()
+	control_dat = dat.split('\n')[0]
+	if control_dat == 'default':
+		c_scheme = 'default'
+	else:
+		c_scheme = 'custom'
+		n = 0
+		for val in control_dat.split(';'):
+			if n == 0:
+				up_key = int(val)
+			if n == 1:
+				down_key = int(val)
+			if n == 3:
+				left_key = int(val)
+			if n == 4:
+				power_key = int(val)
+			if n == 5:
+				select_key = int(val)
+			n += 1 
+def save_controls():
+	global up_key, down_key, right_key, left_key, power_key, select_key, c_scheme
+	f = open('Data/control_settings.txt','r')
+	dat = f.read()
+	f.close()
+	dat = dat.split('\n')
+	f = open('Data/control_settings.txt','w')
+	out_str = str(up_key) + ';' + str(down_key) + ';' + str(right_key) + ';' + str(left_key) + ';' + str(power_key) + ';' + str(select_key) + '\n' + dat[1]
+	f.write(out_str)
+	f.close()
+load_controls()
 global e_colorkey
 e_colorkey = (255,255,255)
 
@@ -122,7 +156,6 @@ def run_menu():
 			if menu_choice == 'Play':
 				run = False
 			if menu_choice == 'Options':
-				print('Work in progress!')
 				make_menu('options')
 		if pressed_right:
 			selection += 1
@@ -272,6 +305,7 @@ def make_menu(menu_id):
 						if current_selection == 6:
 							pause_key = event.key
 					key_order = [left_key,right_key,up_key,down_key,power_key,select_key,pause_key]
+					save_controls()
 				if event.type == QUIT:
 					pygame.quit()
 					sys.exit()
