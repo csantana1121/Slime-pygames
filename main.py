@@ -2,13 +2,31 @@ from pygame import *
 import pygame
 import sys
 import Data.text as text
+def load_video_settings():
+	global scale
+	f= open('Data/video_settings.txt', 'r')
+	dat = f.read()
+	scale = int(dat[0])
+	f.close()
+	return dat[1]
+def save_video_settings():
+	global fullscreened, scale
+	f = open('Data/video_settings.txt', 'w')
+	f.write(str(scale) + fullscreened)
+	f.close()
 pygame.init()
-global display_dimensions, scale 
-scale = 5
+global display_dimensions, scale, fullscreened
 display_dimensions = [384,216]
+fullscreened = load_video_settings()
+global win
+if fullscreened == 'n':
+	win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
+else:
+	win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),pygame.FULLSCREEN)
+	
 display = pygame.Surface(display_dimensions)
 
-win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
+
 global up_key, down_key, right_key, left_key, power_key, select_key, pause_key, c_scheme
 up_key = K_UP
 down_key = K_DOWN
@@ -220,6 +238,7 @@ def make_menu(menu_id):
 						fullscreened = 'n'
 						scale = current_selection + 1
 						win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
+					save_video_settings()
 				if menu_id == 'keyboard':
 					if chosen_option == 'Back':
 						running = False
