@@ -114,11 +114,13 @@ leftSprite = pygame.image.load('Data/walk.gif')
 def run_menu():
 	global up_key, down_key, right_key, left_key, power_key, select_key, enter_key
 	menu_bar = pygame.image.load('Data/menu_bar.png')
+	title_img = pygame.image.load('Data/SlimeByte.png')
 	selection = 0
 	menu_layout = ['Play', 'Options', 'Quit']
 	run = True
 	while run:
 		display.fill((31, 40, 54))
+		display.blit(title_img,(50,0))
 		n = 0
 		for option in menu_layout:
 			bar_img = menu_bar.copy()
