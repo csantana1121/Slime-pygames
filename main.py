@@ -32,6 +32,8 @@ damage = pygame.mixer.Sound('Data/slime animations/damage.wav')
 explosionSound = pygame.mixer.Sound('Data/slime animations/explosion.wav')
 shootNormalSound = pygame.mixer.Sound('Data/slime animations/shootNormal.wav')
 win = pygame.mixer.Sound('Data/slime animations/win.wav')
+menu_move = pygame.mixer.Sound('Data/slime animations/menu_move.wav')
+menu_select = pygame.mixer.Sound('Data/slime animations/menu_select.wav')
 if fullscreened == 'n':
 	win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
 else:
@@ -191,6 +193,7 @@ def run_menu():
 				if event.key == down_key:
 					pressed_down = True
 		if pressed_select:
+			menu_select.play()
 			menu_choice = menu_layout[selection]
 			if menu_choice == 'Quit':
 				pygame.quit()
@@ -200,10 +203,12 @@ def run_menu():
 			if menu_choice == 'Options':
 				make_menu('options')
 		if pressed_right:
+			menu_move.play()
 			selection += 1
 			if selection >= len(menu_layout):
 				selection = 0
 		if pressed_left:
+			menu_move.play()
 			selection -= 1
 			if selection <= -1:
 				selection = 2
@@ -287,6 +292,7 @@ def make_menu(menu_id):
 						pressed_down = True
 		if setting_key == 0:
 			if pressed_select:
+				menu_select.play()
 				chosen_option = menu_options[current_selection]
 				if menu_id == 'pause':
 					if chosen_option == 'Resume':
@@ -320,10 +326,12 @@ def make_menu(menu_id):
 					else:
 						setting_key = 1
 			if pressed_down:
+				menu_move.play()
 				current_selection += 1
 				if current_selection >= len(menu_options):
 					current_selection = 0
 			if pressed_up:
+				menu_move.play()
 				current_selection -= 1
 				if current_selection < 0:
 					current_selection = len(menu_options)-1
