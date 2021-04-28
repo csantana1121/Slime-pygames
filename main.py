@@ -45,7 +45,7 @@ up_key = K_UP
 down_key = K_DOWN
 right_key = K_RIGHT
 left_key = K_LEFT
-power_key = K_z
+power_key = K_SPACE
 select_key = K_RETURN
 pause_key = K_ESCAPE
 enter_key = K_RETURN
@@ -154,7 +154,7 @@ def run_menu():
 	title_img = pygame.image.load('Data/SlimeByte.png')
 	pygame.mixer.music.pause()
 	pygame.mixer.music.load('Data/menu.mp3')
-	pygame.mixer.music.play()
+	pygame.mixer.music.play(-1)
 	selection = 0
 	menu_layout = ['Play', 'Options', 'Quit']
 	run = True
@@ -226,7 +226,7 @@ def make_menu(menu_id):
 		menu_options = ['384x216','768x432','1152x648','1536x684','1920x1080', 'Fullscreen','Back']
 		menu_title = 'Video Settings'
 	if menu_id == 'keyboard':
-		menu_options = ['Left: ','Right: ','Up/Jump: ','Down: ','Use Special: ','Select: ','Pause: ','Back']
+		menu_options = ['Left: ','Right: ','Up/Jump: ','Down: ','Shoot: ','Select: ','Pause: ','Back']
 		wide = True
 		menu_title = 'Keyboard Settings'
 		key_order = [left_key,right_key,up_key,down_key,power_key,select_key,pause_key]
@@ -827,7 +827,7 @@ def load_level_1():
 
 	pygame.mixer.music.pause()
 	pygame.mixer.music.load('Data/level1.mp3')
-	pygame.mixer.music.play()
+	pygame.mixer.music.play(-1)
 
 	current_level = 1
 
@@ -871,7 +871,7 @@ def load_level_2():
 	pygame.mixer.music.pause()
 
 	pygame.mixer.music.load('Data/level2.mp3')
-	pygame.mixer.music.play()
+	pygame.mixer.music.play(-1)
 
 	#level2Music.play()
 	
@@ -962,7 +962,7 @@ while run:
 
 			dieSound.play()
 			#restart music
-			pygame.mixer.music.play()
+			pygame.mixer.music.play(-1)
 			
 			load_level_1()
 			continue
