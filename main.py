@@ -14,6 +14,7 @@ def save_video_settings():
 	f = open('Data/video_settings.txt', 'w')
 	f.write(str(scale) + fullscreened)
 	f.close()
+mainClock = pygame.time.Clock()
 pygame.init()
 global display_dimensions, scale, fullscreened
 display_dimensions = [384,216]
@@ -81,6 +82,8 @@ font_dat = {'A': [3], 'B': [3], 'C': [3], 'D': [3], 'E': [3], 'F': [3], 'G': [3]
 			'0': [3], '1': [3], '2': [3], '3': [3], '4': [3], '5': [3], '6': [3], '7': [3], '8': [3], '9': [3],
 			'(': [2], ')': [2], '/': [3], '_': [5], '=': [3], '\\': [3], '[': [2], ']': [2], '*': [3], '"': [3], '<': [3], '>': [3], ';': [1]}
 
+global framerate
+framerate = 60
 
 def get_text_width(text, spacing):
 	global font_dat
@@ -110,6 +113,28 @@ background = pygame.image.load('Data/background.jpg')
 rightSprite = pygame.image.load('Data/walk.gif')
 leftSprite = pygame.image.load('Data/walk.gif')
 
+def opening():
+	global display_dimensions
+	opening_bg = pygame.image.load('Data/background.jpg')
+	opening_img = pygame.image.load('Data/opening.png')
+	timer = 0
+	while timer < 227:
+		timer += 1
+		display.fill((16,30,41))
+		opening_bg.set_alpha(max(0,min(int((timer-100)*5),255)))
+		display.blit(opening_img,(100,60))
+		if timer > 220:
+			white_surf = pygame.Surface(display_dimensions)
+			white_surf.fill((248,248,248))
+			white_surf.set_alpha(min((timer-220)*40,255))
+			display.blit(white_surf,(0,0))
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				pygame.quit()
+				sys.exit()
+		win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
+		pygame.display.update()
+		mainClock.tick(framerate)
 
 def run_menu():
 	global up_key, down_key, right_key, left_key, power_key, select_key, enter_key
@@ -600,7 +625,7 @@ def GameWindow():
 			spike.draw(win)
 	pygame.display.update()
 
-
+opening()
 run_menu()
 run = True
 display.blit(background, (0, 0))
