@@ -2,6 +2,8 @@ from pygame import *
 import pygame
 import sys
 import Data.text as text
+import time
+
 def load_video_settings():
 	global scale
 	f= open('Data/video_settings.txt', 'r')
@@ -20,6 +22,15 @@ global display_dimensions, scale, fullscreened
 display_dimensions = [384,216]
 fullscreened = load_video_settings()
 global win
+pygame.mixer.music.load('Data/level1.mp3')
+level2Music = pygame.mixer.Sound('Data/level2.mp3')
+jumpSound = pygame.mixer.Sound('Data/slime animations/jump.wav')
+powerup = pygame.mixer.Sound('Data/slime animations/powerup.wav')
+dieSound = pygame.mixer.Sound('Data/slime animations/die.wav')
+damage = pygame.mixer.Sound('Data/slime animations/damage.wav')
+explosionSound = pygame.mixer.Sound('Data/slime animations/explosion.wav')
+shootNormalSound = pygame.mixer.Sound('Data/slime animations/shootNormal.wav')
+win = pygame.mixer.Sound('Data/slime animations/win.wav')
 if fullscreened == 'n':
 	win = pygame.display.set_mode((display_dimensions[0] * scale, display_dimensions[1] * scale),0,32)
 else:
@@ -110,8 +121,8 @@ font_3 = text.generate_font('Data/small_font.png',font_dat,5,8,(16,30,41))
 
 pygame.display.set_caption("Game")
 background = pygame.image.load('Data/background.jpg')
-rightSprite = pygame.image.load('Data/walk.gif')
-leftSprite = pygame.image.load('Data/walk.gif')
+#rightSprite = pygame.image.load('Data/walk.gif')
+#leftSprite = pygame.image.load('Data/walk.gif')
 
 def opening():
 	global display_dimensions
@@ -339,16 +350,45 @@ def make_menu(menu_id):
 		win.blit(pygame.transform.scale(display,(display_dimensions[0] * scale, display_dimensions[1] * scale)),(0,0))
 		pygame.display.update()
 
+# load some images, specifies 
+def load_sprites(path, name, number, size="default", extension="png", resize_type="default", flip=(False, False)):
+	sprites_list = []
+	for nb in range(number):
+		# load
+		sprite = pygame.image.load(f"{path}/{name}{nb}.{extension}")
+		# resize
+		if size != "default":
+			if resize_type == "default":
+				sprite = pygame.transform.scale(sprite, size)
+			elif resize_type == "smooth":
+				sprite = pygame.transform.smoothscale(sprite, size)
+		# flip
+		if flip != (False, False):
+			sprite = pygame.transform.flip(sprite, flip[0], flip[1])
+
+		sprites_list.append(sprite)
+
+	return sprites_list
 
 class largerBullet(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
+	def __init__(self, pos, radius=30, color=(0, 200, 0)):
+		x, y = pos
 		self.radius = radius
+		self.rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
 		self.color = color
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
+		bonus_sprite_size = int(radius * 2)
+		self.bonus_sprite = load_sprites("Data/slime animations/bonus", "largerBullet2_", 1,
+										size=(bonus_sprite_size, bonus_sprite_size), resize_type="smooth")[0]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 22), self.rect) # draw the hitbox
+		# pygame.draw.circle(win, self.color, self.rect.center, self.radius)
+		# draw the image in the center
+		win.blit(self.bonus_sprite, (self.rect.centerx - self.bonus_sprite.get_width()//2,
+									self.rect.centery - self.bonus_sprite.get_height()//2))
+
 
 	def activatePowerUp(self):
 		global reloadBigShots
@@ -356,15 +396,26 @@ class largerBullet(object):
 		powerUps.pop(powerUps.index(self))
 
 
+
 class fasterBullet(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
+	def __init__(self, pos, radius=20, color=(200, 200, 200)):
+		x, y = pos
 		self.radius = radius
+		self.rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
 		self.color = color
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
+		bonus_sprite_size = int(radius * 2)
+		self.bonus_sprite = load_sprites("Data/slime animations/bonus", "fasterBullet2_", 1,
+										size=(bonus_sprite_size, bonus_sprite_size), resize_type="smooth")[0]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 22), self.rect) # draw the hitbox
+		# pygame.draw.circle(win, self.color, self.rect.center, self.radius)
+		# draw the image in the center
+		win.blit(self.bonus_sprite, (self.rect.centerx - self.bonus_sprite.get_width()//2,
+									self.rect.centery - self.bonus_sprite.get_height()//2))
+
 
 	def activatePowerUp(self):
 		global reloadFastShots
@@ -372,92 +423,85 @@ class fasterBullet(object):
 		powerUps.pop(powerUps.index(self))
 
 
-class fasterSlime(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
-		self.radius = radius
-		self.color = color
-
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
-
-	def activatePowerUp(self):
-		global activateFastSlime, recordTimeWhileFastSlimeMode
-		activateFastSlime = True
-		recordTimeWhileFastSlimeMode = pygame.time.get_ticks()
-		powerUps.pop(powerUps.index(self))
 
 class permaBuffSpeed(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
+	def __init__(self, pos, radius=20, color=(0,0,200)):
+		x, y = pos
 		self.radius = radius
+		self.rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
 		self.color = color
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
+		bonus_sprite_size = int(radius * 2)
+		self.bonus_sprite = load_sprites("Data/slime animations/bonus", "permaBuffSpeed2_", 1,
+										size=(bonus_sprite_size, bonus_sprite_size), resize_type="smooth")[0]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 22), self.rect) # draw the hitbox
+		# pygame.draw.circle(win, self.color, self.rect.center, self.radius)
+		# draw the image in the center
+		win.blit(self.bonus_sprite, (self.rect.centerx - self.bonus_sprite.get_width()//2,
+									self.rect.centery - self.bonus_sprite.get_height()//2))
+
 
 	def activatePowerUp(self):
 		powerUps.pop(powerUps.index(self))
-		sprite.vel = 7
+		sprite.vel[0] = int(sprite.vel[0] * 1.5) # the player will move X time faster
+
+
 
 class doubleBullet(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
+	def __init__(self, pos, radius=20, color=(0,0,200)):
+		x, y = pos
 		self.radius = radius
+		self.rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
 		self.color = color
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
+		bonus_sprite_size = int(radius * 2)
+		self.bonus_sprite = load_sprites("Data/slime animations/bonus", "doubleBullet2_", 1,
+										size=(bonus_sprite_size, bonus_sprite_size), resize_type="smooth")[0]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 22), self.rect) # draw the hitbox
+		# pygame.draw.circle(win, self.color, self.rect.center, self.radius)
+		# draw the image in the center
+		win.blit(self.bonus_sprite, (self.rect.centerx - self.bonus_sprite.get_width()//2,
+									self.rect.centery - self.bonus_sprite.get_height()//2))
+
 
 	def activatePowerUp(self):
 		global reloadDoubleShots
 		reloadDoubleShots = 10
 		powerUps.pop(powerUps.index(self))
 
+
+
 class tripleBullet(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
+	def __init__(self, pos, radius=30, color=(0,0,200)):
+		x, y = pos
 		self.radius = radius
+		self.rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
 		self.color = color
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
+		bonus_sprite_size = int(radius * 2)
+		self.bonus_sprite = load_sprites("Data/slime animations/bonus", "tripleBullet2_", 1,
+										size=(bonus_sprite_size, bonus_sprite_size), resize_type="smooth")[0]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 22), self.rect) # draw the hitbox
+		# pygame.draw.circle(win, self.color, self.rect.center, self.radius)
+		# draw the image in the center
+		win.blit(self.bonus_sprite, (self.rect.centerx - self.bonus_sprite.get_width()//2,
+									self.rect.centery - self.bonus_sprite.get_height()//2))
+
 
 	def activatePowerUp(self):
 		global reloadTripleBullet
 		reloadTripleBullet = 10
 		powerUps.pop(powerUps.index(self))
 
-class doubleJump(object):
-	#does not work lol
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
-		self.radius = radius
-		self.color = color
-
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
-
-
-class gliding(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
-		self.radius = radius
-		self.color = color
-
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
-
-	def activatePowerUp(self):
-		global activateGlideSlime, recordTimeWhileGlidingSlimeMode
-		activateGlideSlime = True
-		powerUps.pop(powerUps.index(self))
 
 
 class projectile(object):
@@ -468,73 +512,116 @@ class projectile(object):
 		self.color = color
 		self.facing = facing
 		self.vel = vel * facing
-		self. upOrDown = upOrDown
+		self.upOrDown = upOrDown
+		self.rect = pygame.Rect(self.x-self.radius, self.y - self.radius, self.radius*2, self.radius*2) # rect for collisions
 
 
 	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x*scale, self.y*scale), self.radius*scale)
+		pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
 
 
-class enemy(object):
-	# Blueprints to create enemy type objects
-	fireImage = pygame.image.load('Data/Fire.jpg')
-
-	def __init__(self, x, y, width, height):
-		self.x = x
-		self.y = y
-		self.width = width * scale
-		self.height = height * scale
-		self.hitbox = (self.x, self.y, width, height)
-		self.size = self.fireImage.get_size()
-		self.health = 3
-		self.dead = False
+	def collide(self, target_rect):
+		self.rect.center = (self.x, self.y)
+		# pygame.draw.rect(win, (222,22,77), self.rect) # draw the hitbox
+		if self.rect.colliderect(target_rect):
+			return True
 
 
-	def draw(self, win):
-		self.hitbox = (self.x, self.y, self.width, self.height)
-		self.fireImage = pygame.transform.scale(self.fireImage, (int(self.size[0] * scale), int(self.size[1]) * scale))
-		# change size of sprite
-		win.blit(self.fireImage, (self.x, self.y))
-		pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
-	def hit(self):
-		self.health -= 1
-		bullets.pop(bullets.index(bullet))
-		if self.health == 0:
-			self.dead = True
-			print("DEAD")
-			listOfSpikelists.append(createSpikeLists(self.x,self.y))
-			enemies.pop(enemies.index(enemy))
+class Explosion:
+	def __init__(self, pos, speed=0.075, size="default"):
+		self.pos = pos
+		self.explosionSprites = load_sprites("Data/slime animations/sprite list/explosion", "sprite_", 7, size=size)
+
+		self.animations_speed = speed  # the images will change every X sec
+		self.current_frame = 0
+		self.animations_timer = 0 # store the time for  the animations
 
 
-def createSpikeLists(x,y):
+	def make_animation(self):
+		if time.time() > self.animations_timer:
+			self.animations_timer = time.time() + self.animations_speed
+			self.current_frame += 1 # change the frame
+			if self.current_frame > len(self.explosionSprites)-1:
+				return "to_remove"
+
+		return self.explosionSprites[self.current_frame]
+
+
+	def draw(self):
+		sprite = self.make_animation()
+		if sprite == "to_remove":
+			explosionsList.pop(explosionsList.index(self))
+		else:
+			win.blit(sprite, (self.pos[0] - sprite.get_width()//2, self.pos[1] - sprite.get_height()//2))
+
+
+
+class Spike(object):
+
+	def __init__(self, pos):
+		x, y = pos
+		size = (50, 50) # size of the spike image
+		self.lives = 2 # X bullets are needed to break the spike
+		self.spikeSprites = {} # will contain all the spike sprite
+		self.spikeSprites["gray"] = load_sprites("Data/slime animations/bomb/gray", "bomb_", 4, size=size)
+		self.spikeSprites["red"] = load_sprites("Data/slime animations/bomb/red", "bomb_", 4, size=size)
+
+		self.animations_speed = 0.2
+		# the images will change every X sec
+		self.current_frame = 0
+		self.animations_timer = 0 # store the time for  the animations
+
+		hitbox_smaller = (15, 15) # will make the spike hitbox a little bit smaller than the image
+		self.rect = pygame.Rect(x - size[0]/2 + hitbox_smaller[0]/2, y - size[1] + hitbox_smaller[1],
+								 size[0] - hitbox_smaller[0], size[1] - hitbox_smaller[1])
+
+
+	def collide(self, target_rect): # check if the target_rect (player rect) collide with the spike
+		if self.rect.colliderect(target_rect):
+			explosionSound.play()
+			print("target collide with spike")
+			return True
+
+
+	def make_animation(self): 
+		if self.lives > 1:
+			color = "gray"
+		else:
+			color = "red"
+
+		if time.time() > self.animations_timer:
+			self.animations_timer = time.time() + self.animations_speed
+			self.current_frame += 1 # change the frame
+			if self.current_frame > len(self.spikeSprites[color])-1:
+				self.current_frame = 0
+
+		return self.spikeSprites[color][self.current_frame]
+
+
+	def draw(self):
+		# pygame.draw.rect(win, (222, 22, 2), self.rect) # draw the hitbox
+		sprite = self.make_animation()
+		win.blit(sprite, (self.rect.centerx - sprite.get_width()//2, self.rect.bottom - sprite.get_height()))
+
+
+
+def createSpikeLists(poslist): # create a spike at each position in the list
 	listOfSpikes = []
-	listOfSpikes.append(spike(x, y, 0, 5))
-	listOfSpikes.append(spike(x, y, 5, 5))
-	listOfSpikes.append(spike(x, y, 5, 0))
-	listOfSpikes.append(spike(x, y, 5, -5))
-	listOfSpikes.append(spike(x, y, 0, -5))
-	listOfSpikes.append(spike(x, y, -5, -5))
-	listOfSpikes.append(spike(x, y, -5, 0))
-	listOfSpikes.append(spike(x, y, -5, 5))
+	for pos in poslist:
+		listOfSpikes.append(Spike(pos))
 	return listOfSpikes
 
 
-class spike(object):
+def createObstaclesLists(obstaclesPosList): # create the obstacles rect (hitbox)
+	listOfObstacles = []
 
-	def __init__(self, x, y, xVel,yVel):
-		self.northeastSpike = pygame.image.load('Data/Fire.jpg')
-		self.x = x
-		self.y = y
-		self.xVel = xVel
-		self.yVel = yVel
-		self.size = self.northeastSpike.get_size()
-		self.hitbox = (x,y,self.size[0])
+	for pos in obstaclesPosList:
+		start_pos, end_pos = pos
+		rect = pygame.Rect(start_pos[0], start_pos[1], end_pos[0]-start_pos[0], end_pos[1]-start_pos[1])
+		listOfObstacles.append(rect)
 
-	def draw(self, win):
-		self.hitbox = (self.x,self.y,self.size[0])
-		self.northeastSpike = pygame.transform.scale(self.northeastSpike, (self.size[0], self.size[1]))
-		win.blit(self.northeastSpike, (self.x, self.y))
+	return listOfObstacles
 
 
 
@@ -542,163 +629,294 @@ class player(object):
 	def __init__(self, x, y, width, height,vel):
 		self.x = x
 		self.y = y
-		self.massGain = scale
 		self.width = width
 		self.height = height
-		self.vel = vel
-		self.walkCount = 0
+
+		self.rect = pygame.Rect(x, y, width, height) # player rect
+
+		# jump and fall settings
+		self.reset_fall_speed = 3
+		self.increase_fall_speed  = 1.7
+		self.max_fall_speed = 20
+		self.jumpHeight = 24
+
+		self.vel = [vel, 0] # vel x, vel y
+
 		self.isJump = False
-		self.jumpCount = 10
-		self.left = False
-		self.right = False
+		self.isFalling = True
+
 		self.hitbox = (self.x, self.y, self.width, self.height)
-		self.facing = True
-		self.rightSprite = pygame.image.load('Data/rightSprite.png')
-		self.defaultSprite = pygame.image.load('Data/rightSprite.png')
-		self.leftSprite = pygame.image.load('Data/image-2.png')
-		self.configure = 0
-		self.health = 3
 
-	def draw(self, win):
-		tempWidth = int(self.width * self.massGain)
-		win.blit(pygame.transform.scale(display, (display_dimensions[0] * scale, display_dimensions[1] * scale)),(0, 0))
-		self.hitbox = (self.x * scale+self.configure, self.y * scale, tempWidth, tempWidth)
-		if self.left:
-			self.leftSprite = pygame.transform.scale(self.leftSprite,(tempWidth, tempWidth))
-			win.blit(self.leftSprite, (self.x * scale+self.configure, self.y * scale))
-			self.defaultSprite = pygame.image.load('Data/image-2.png')
-			self.facing = False
-		elif self.right:
-			self.rightSprite = pygame.transform.scale(self.rightSprite,(tempWidth, tempWidth))
-			win.blit(self.rightSprite, (self.x * scale+self.configure, self.y * scale))
-			self.defaultSprite = pygame.image.load('Data/rightSprite.png')
-			self.facing = True
-		else:
-			self.defaultSprite = pygame.transform.scale(self.defaultSprite,(tempWidth,tempWidth))
-			win.blit(self.defaultSprite, (self.x * scale+self.configure, self.y * scale))
-		pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+		# sprites
+		self.isLooking = "right"
+		self.sprites = {"right": {}, "left": {}}
+			# walk
+		self.sprites["right"]["walk"] = load_sprites("Data/slime animations/sprite list/walk", "sprite_", 4, size="default")
+		self.sprites["left"]["walk"] = load_sprites("Data/slime animations/sprite list/walk", "sprite_", 4, size="default", flip=(True,False))
+			# jump
+		self.sprites["right"]["jump"] = load_sprites("Data/slime animations/sprite list", "jump_", 1, size="default")
+		self.sprites["left"]["jump"] = load_sprites("Data/slime animations/sprite list", "jump_", 1, size="default", flip=(True,False))
+			# splash
+		self.sprites["right"]["splash"] = load_sprites("Data/slime animations/sprite list/splash", "sprite_", 3, size="default")
+		self.sprites["left"]["splash"] = load_sprites("Data/slime animations/sprite list/splash", "sprite_", 3, size="default", flip=(True,False))
 
-class massPowerUp(object):
-	def __init__(self, x, y, radius, color):
-		self.x = x
-		self.y = y
-		self.radius = radius
-		self.color = color
+		# animations
+		self.state = "jump"
+		self.animations_speed = {"walk": 0.2, "jump": 0.07, "splash": 0.12} # the sprite image will change every X sec
+		self.current_frame = 0
+		self.animations_timer = 0 # store the time for the animations
 
-	def draw(self, win):
-		pygame.draw.circle(win, self.color, (self.x * scale, self.y * scale), self.radius * scale)
 
-	def activatePowerUp(self):
-		sprite.massGain += .3
-		sprite.y -= 6.4
-		sprite.configure += 19.2
-		global width
-		width += 1
-		sprite.health += 1
-		powerUps.pop(powerUps.index(self))
 
-previousTime = 0
-def hit():
-	currentTime = pygame.time.get_ticks()
-	global previousTime
-	# time between shots when space is pressed
-	if currentTime - previousTime > 550:
-		previousTime = currentTime
-		sprite.health -= 1
-		sprite.massGain -= .3
-		sprite.configure -= 19.2
-		sprite.y += 6.4
-		global trueWidth
-		trueWidth += 6.4
+
+	def move(self): # make move the player
+
+		keys = pygame.key.get_pressed()
+
+		vel = [0, 0]
+		# right and left
+		if keys[pygame.K_LEFT]:
+			vel[0] -= self.vel[0]
+			self.isLooking = "left"
+		if keys[pygame.K_RIGHT]:
+			vel[0] += self.vel[0]
+			self.isLooking = "right"
+
+		self.x += vel[0]
+		self.rect.x = self.x
+			# make that the player can not move outside the screen
+		if self.rect.right > win.get_width():
+			self.rect.right = win.get_width()
+			self.x = self.rect.x
+		elif self.rect.left < 0:
+			self.rect.left = 0
+			self.x = self.rect.x
+
+
+		for obstacle in obstaclesList:
+			if self.rect.colliderect(obstacle): # if  the player colldie  with the obstalce
+				if vel[0] < 0: # if the player is moving to the left
+					self.rect.left = obstacle.right
+					self.x = self.rect.x
+				elif vel[0] > 0: # if the player is moving to the right
+					self.rect.right = obstacle.left
+					self.x = self.rect.x
+
+		# up and down
+		if not self.isJump and not self.isFalling:
+			if keys[pygame.K_UP]:
+				self.isJump = True
+				self.vel[1] -= self.jumpHeight
+				jumpSound.play()
+				
+
+		# make the gravity
+		self.vel[1] += self.increase_fall_speed
+		self.vel[1] = min(self.vel[1], self.max_fall_speed)
+
+		self.y += self.vel[1]
+		self.rect.y = self.y
+		self.isFalling = True
+
+		for obstacle in obstaclesList:
+			if self.rect.colliderect(obstacle): # if  the player colldie  with the obstalce
+				if self.vel[1] < 0: # if the player is moving up (when jumping)
+					self.vel[1] = 0
+					self.rect.top = obstacle.bottom
+					self.y = self.rect.y
+				elif self.vel[1] > 0: # if the player is moving down (falling)
+					self.vel[1] = self.reset_fall_speed
+					self.fall_speed = self.reset_fall_speed
+					self.rect.bottom = obstacle.top
+					self.y = self.rect.y
+					if self.isJump:
+						self.state = "splash" # will make the splash animations
+						self.current_frame = 0 # will begin the splash animations with the first frame
+						self.isJump = False # make that the player can jump again
+					self.isFalling = False
+
+		# draw the player hitbox
+		# pygame.draw.rect(win, (255, 0, 0), self.rect)
+
+
+	def make_animation(self):
+		if self.isJump:
+			if self.state == "walk" or self.state == "splash":
+				self.current_frame = 0
+			self.state = "jump"
+		elif self.state != "splash":
+			if self.state != "walk":
+				self.current_frame = 0
+			self.state = "walk"
+
+
+		if time.time() > self.animations_timer:
+			self.animations_timer = time.time() + self.animations_speed[self.state]
+			self.current_frame += 1 # change the frame
+			if self.current_frame > len(self.sprites[self.isLooking][self.state])-1:
+				self.current_frame = 0
+				# if not self.isJump:
+				#     self.state = "walk"
+				if self.state == "splash":
+					self.state = "walk"
+
+		return self.sprites[self.isLooking][self.state][self.current_frame]
+
+
+	def draw(self):
+		sprite = self.make_animation()
+		win.blit(sprite, (self.rect.centerx-sprite.get_width()//2, self.rect.bottom-sprite.get_height()))
+
 
 
 def GameWindow():
-	sprite.draw(win)
+	# draw the obstacles hitbox
+	# for obstalce in obstaclesList:
+	#     pygame.draw.rect(win, (255, 222, 200), obstalce)
+
+	if not gameOver: # only draw if the sprite player is alive
+		sprite.draw()
+
 	for powerUp in powerUps:
-		powerUp.draw(win)
-	for enemy in enemies:
-		enemy.draw(win)
+		powerUp.draw()
+
 	for bullet in bullets:
 		bullet.draw(win)
-	for list in listOfSpikelists:
-		for spike in list:
-			spike.draw(win)
+
+	for spike in spikesList:
+		spike.draw()
+
 	pygame.display.update()
 
 opening()
 run_menu()
+background_level_1 = pygame.transform.scale(pygame.image.load('Data/level 1 empty.png'), (win.get_width(), win.get_height()))
+background_level_2 = pygame.transform.scale(pygame.image.load('Data/level 3 empty.png'), (win.get_width(), win.get_height()))
 run = True
 display.blit(background, (0, 0))
 previous_time = pygame.time.get_ticks()
 
-sprite = player(0, display_dimensions[1] - 64, 64, 64,5)
-enemies = []
-enemies.append(enemy(600, 456, 64, 64))
-bullets = []
+#level 1
+level_1_obstaclesPosList = [[(42, 436), (124, 452)], [(2, 588), (1151, 646)], [(146, 509), (225, 526)], [(409, 509), (489, 527)], [(773, 501), (861, 520)],
+					[(1070, 501), (1149, 515)], [(978, 426), (1056, 443)], [(1072, 351), (1151, 365)], [(976, 270), (1053, 284)],
+					[(1071, 194), (1149, 206)], [(815, 110), (1060, 128)], [(646, 113), (726, 131)], [(510, 304), (671, 319)],
+					[(510, 114), (590, 129)], [(412, 258), (494, 273)], [(318, 302), (400, 317)], [(142, 356), (306, 371)],
+					[(246, 115), (396, 129)], [(0, 88), (177, 104)]]
 
-powerUps = []
-# powerUps.append(largerBullet(0,  display_dimensions[1] - 64, 40, (0, 200, 0)))
-# powerUps.append(fasterBullet(0,  display_dimensions[1], 40, (200, 200, 200)))
-# powerUps.append(fasterSlime(300,  display_dimensions[1], 80, (000, 000, 200)))200
-# powerUps.append(doubleBullet(0,  display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(tripleBullet(0,  display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(permaBuffSpeed(0,  display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(gliding(0, display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(massPowerUp(0,  display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(massPowerUp(0,  display_dimensions[1], 80, (000, 000, 200)))
-# powerUps.append(massPowerUp(0,  display_dimensions[1], 80, (000, 000, 200)))
+level_1_spikesPosList = [(443, 508), (643, 588), (205, 355), (1012, 426), (1112, 192), (551, 111), (830, 109), (919, 110), (138, 60) ,(832, 362)]
 
 
-reloadBigShots = 0
-reloadFastShots = 0
-reloadDoubleShots = 0
-reloadTripleBullet = 0
+# level 2
+level_2_obstaclesPosList = [[(0, 256), (88, 290)], [(76, 378), (266, 417)], [(363, 385), (474, 416)], [(563, 477), (658, 510)],
+					[(728, 384), (893, 418)], [(849, 481), (961, 514)], [(1022, 558), (1148, 591)], [(1063, 391), (1151, 420)],
+					[(954, 320), (1039, 348)], [(1064, 247), (1150, 278)], [(932, 181), (1011, 212)], [(762, 123), (935, 159)],
+					[(532, 177), (673, 210)], [(440, 99), (529, 131)], [(317, 98), (406, 132)], [(1, 99), (87, 131)],
+					[(0, 564), (106, 591)], [(170, 563), (268, 592)], [(326, 563), (414, 597)], [(1, 634), (1151, 647)],
+					[(473, 545), (530, 578)]]
 
-recordTimeWhileFastSlimeMode = 0
-recordTimeWhileGlidingSlimeMode = 0
-recordTimeUntilNextHitRegisters = 0
+level_2_spikesPosList = [(31, 564), (462, 384), (365, 296), (904, 481), (1086, 557), (1106, 390), (607, 294), (482, 99), (599, 142)]
 
-activateFastSlime = False
-activateGlideSlime = False
-tripleBulletUp = []
-tripleBulletDown = []
-listOfSpikelists = []
+def load_level_1():
+	global sprite, bullets, obstaclesList, spikesList, powerUps, reloadBigShots
+	global reloadFastShots, reloadDoubleShots, reloadTripleBullet
+	global explosionsList, enemies, gameOver, flagRect, current_level
 
-trueWidth = 0
+	pygame.mixer.music.pause()
+	pygame.mixer.music.play()
+
+	current_level = 1
+
+
+	sprite = player(0, display_dimensions[1] - 64, 40, 40,5)
+
+	enemies = []
+	bullets = []
+
+	gameOver = False
+
+	obstaclesList = createObstaclesLists(level_1_obstaclesPosList)
+
+	spikesList = createSpikeLists(level_1_spikesPosList)
+
+	flagRect = pygame.Rect(22, 14, 20, 71)
+	powerUps = []
+
+	 # functional powerUp :
+	powerUps.append(largerBullet((1103, 470))
+					)
+	#powerUps.append(fasterBullet((458,  550)))
+	powerUps.append(permaBuffSpeed(((643, 564))))
+	# powerUps.append(doubleBullet((794, 550)))
+	powerUps.append(tripleBullet((584, 255)))
+
+
+	reloadBigShots = 0
+	reloadFastShots = 0
+	reloadDoubleShots = 0
+	reloadTripleBullet = 0
+
+	explosionsList = []
+
+
+def load_level_2():
+	global sprite, bullets, obstaclesList, spikesList, powerUps, reloadBigShots
+	global reloadFastShots, reloadDoubleShots, reloadTripleBullet
+	global explosionsList, enemies, gameOver, flagRect, current_level
+
+	pygame.mixer.music.pause()
+
+	pygame.mixer.music.load('Data/level2.mp3')
+	pygame.mixer.music.play()
+
+	#level2Music.play()
+	
+
+	current_level = 2
+	sprite = player(0, display_dimensions[1] - 64, 40, 40,5)
+	enemies = []
+	bullets = []
+
+	gameOver = False
+
+	obstaclesList = createObstaclesLists(level_2_obstaclesPosList)
+
+	spikesList = createSpikeLists(level_2_spikesPosList)
+
+	flagRect = pygame.Rect(329, 34, 41, 60)
+	powerUps = []
+	# functional powerUp :
+	# powerUps.append(largerBullet((221, 311)))
+	powerUps.append(fasterBullet((25, 462)))
+	powerUps.append(permaBuffSpeed((1108, 204)))
+	powerUps.append(doubleBullet((615, 439)))
+	powerUps.append(tripleBullet((791, 98)))
+
+
+	reloadBigShots = 0
+	reloadFastShots = 0
+	reloadDoubleShots = 0
+	reloadTripleBullet = 0
+
+	explosionsList = []
+
+
+
+load_level_1() # the user will begin at level X
 
 while run:
 
-	for list in listOfSpikelists:
-		for spike in list:
-			spike.x += spike.xVel
-			spike.y += spike.yVel
-			# print(spike.hitbox[0]-spike.hitbox[2])
-			#
-			# print(sprite.hitbox[0] > spike.hitbox[0] - spike.hitbox[2])
-			if sprite.hitbox[0] < spike.hitbox[0] + spike.hitbox[2] and sprite.hitbox[0] + sprite.hitbox[2] > spike.hitbox[0]:
-				if sprite.hitbox[1] < spike.hitbox[1] + spike.hitbox[2] and sprite.hitbox[1] + sprite.hitbox[3] > spike.hitbox[1]:
-					hit()
-
 	clock = pygame.time.Clock()
-	display.blit(background, (0, 0))
 	pygame.display.update()
 	pygame.time.delay(30)
+	if current_level == 1:
+		win.blit(background_level_1, (0, 0))
+	elif current_level == 2:
+		win.blit(background_level_2, (0, 0))
 
-
-	if activateFastSlime == True:
-		if pygame.time.get_ticks() - recordTimeWhileFastSlimeMode < 20000:
-			sprite.vel *= 2
-			getTime = pygame.time.get_ticks()
-		else:
-			sprite.vel /= 2
-			activateFastSlime = False
-	else:
-		fastSlimeTime = 0
 
 	for bullet in bullets:
 		# Go through all bullet objects, and sees if the bullet is onscreen, then move it by its velocity across screen.
-		if bullet.x < 500 and bullet.x > 0:
-
+		if bullet.x < win.get_width() and bullet.x > 0:
 			bullet.x += bullet.vel  # Moves the bullet by its vel
 			# if we have picked up the triple bullet powerup, move the bullets up and down based.
 			if reloadTripleBullet > 0:
@@ -712,109 +930,127 @@ while run:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			run = False
-	#We go through all the enemy objects and sees if it hits a sprite.
-	for enemy in enemies:
-		if sprite.hitbox[0] > enemy.hitbox[0] - enemy.hitbox[2] and sprite.hitbox[0] - sprite.hitbox[2] < enemy.hitbox[0]:
-			if sprite.hitbox[1] < enemy.hitbox[1] + enemy.hitbox[3] and sprite.hitbox[1] + sprite.hitbox[3] > enemy.hitbox[1]:
-				hit()
-	#We go through all the bullet objects currently on screen. We then go through all the enemy objects and sees if the
-	#bullet hits any of the enemy objects. If a projectile hits a enemy, activate the enemy.hit()
+
+	# check if the player collide with the spike
+	if sprite.rect.colliderect(flagRect):
+		if current_level == 1:
+			print("you beat level 1....but there's more")
+			load_level_2()
+			continue
+		elif current_level == 2:
+			print("you won!!!  (congrats) ")
+			
+
+
+	# Check if the spikes hit the player
+	for spike in spikesList:
+		if spike.collide(sprite.rect):
+			print("player dead")
+			#remove spike that player collided with from screen
+			spikesList.pop(spikesList.index(spike))
+			 
+			explosionsList.append(Explosion(sprite.rect.center))
+			gameOver = True
+
+	if gameOver: # make restart the level 1 when the user died
+		if len(explosionsList) == 0: # if the explosions animations are finished
+
+			dieSound.play()
+			#restart music
+			pygame.mixer.music.play()
+			
+			load_level_1()
+			continue
+
+
+	# check if the bullets collide with :
+		# a obstacle (platform)
 	for bullet in bullets:
-		for enemy in enemies:
-			if bullet.y * scale - bullet.radius < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y * scale + bullet.radius > enemy.hitbox[1]:
-				if bullet.x*scale + bullet.radius > enemy.hitbox[0] and bullet.x *scale- bullet.radius < enemy.hitbox[0] + enemy.hitbox[2]:
-					enemy.hit()
+		for obstacle_rect in obstaclesList:
+			if bullet.collide(obstacle_rect):
+				print("bullet hit platfom -> destroy bullet")
+				bullets.pop(bullets.index(bullet)) # remove the bullet
+
+		# the spikes
+	for bullet in bullets:
+		for spike in spikesList:
+			if bullet.collide(spike.rect):
+				bullets.pop(bullets.index(bullet)) # remove the bullet
+				spike.lives -= 1
+				damage.play()
+				if spike.lives <= 0: # if the spike has no more health
+					explosionsList.append(Explosion(spike.rect.center))
+					spikesList.pop(spikesList.index(spike)) # remove the spike
+					explosionSound.play()
+					print("bullet break spike")
+					continue
+				print("bullet hit spike")
+
+
+	# make the explosions functional
+	for explosion in explosionsList:
+		explosion.draw()
+
+
 	#Goes through all the powerup objects, and sees if a player hits the powerup. If the player hits the powerup hitbox, we
 	#activate the powerup for that particular object
 	for powerUp in powerUps:
-		if powerUp.y * scale - powerUp.radius * scale < sprite.hitbox[1] + sprite.hitbox[3] and powerUp.y * scale + powerUp.radius *scale> sprite.hitbox[1]:
-			if powerUp.x * scale + powerUp.radius *scale > sprite.hitbox[0] and powerUp.x * scale - powerUp.radius *scale < sprite.hitbox[0] + sprite.hitbox[2]:
-				powerUp.activatePowerUp()
+		if powerUp.rect.colliderect(sprite.rect): # check if the powerUp collide with the sprite
+			powerUp.activatePowerUp()
+			powerup.play()
+
 
 	keys = pygame.key.get_pressed()
 	current_time = pygame.time.get_ticks()
-	#time between shots when space is pressed
-	width = sprite.width - trueWidth
+
 	if keys[pygame.K_ESCAPE]:
 		return_val = make_menu('pause')
-	if keys[pygame.K_SPACE] and current_time - previous_time > 210:
+	#time between shots when space is pressed
+	if keys[pygame.K_SPACE] and current_time - previous_time > 300: # reload time
 		previous_time = current_time
-		if sprite.facing:
+		shootNormalSound.play()
+		
+
+		if sprite.isLooking == "right":
 			facing = 1
 		else:
 			facing = -1
 
 		if len(bullets) < 100:
-
-
-			# This will make sure we cannot exceed 5 bullets on the screen at once
-			#ALl these if statements check if a powerup for projectiles was picked, and then
-			#appends the appropriate projectile based on the powerup the sprite acquired.
+			# This will make sure we cannot exceed 100 bullets on the screen at once
+			# ALl these if statements check if a powerup for projectiles was picked, and then
+			# appends the appropriate projectile based on the powerup the sprite acquired.
 			if reloadBigShots > 0:
-				bullets.append(projectile(round(sprite.x + width // 2), round(sprite.y + width// 2), 12,(0, 200, 0),facing,8))
+				bullets.append(projectile(sprite.rect.centerx , sprite.rect.centery, 18, (0, 200, 0),facing,8))
 				reloadBigShots -= 1
 			elif reloadFastShots > 0:
-				bullets.append(projectile(round(sprite.x + width// 2), round(sprite.y + width // 2), 6,
-				(0, 200, 0),facing, 16))
+				bullets.append(projectile(sprite.rect.centerx , sprite.rect.centery, 6,
+											(0, 200, 0),facing, 16))
 				reloadFastShots -= 1
 			elif reloadDoubleShots > 0:
-				bullets.append(projectile(round(sprite.x + width // 2), round(sprite.y + width // 2), 6,
-				(0, 200, 0),facing, 8))
-				if sprite.facing is False:
-					bullets.append(projectile(round(sprite.x + width // 2) - 20, round(sprite.y + width // 2), 6,
-					(0, 200, 0), facing, 8))
-				else:
-					bullets.append(projectile(round(sprite.x + width // 2) + 20, round(sprite.y + width// 2), 6,
-					(0, 200, 0), facing, 8))
+				bullets.append(projectile(sprite.rect.centerx+7 , sprite.rect.centery, 6,
+												(0, 200, 0),facing, 8))
+
+				bullets.append(projectile(sprite.rect.centerx-7, sprite.rect.centery, 6,
+												(0, 200, 0), facing, 8))
 				reloadDoubleShots -= 1
+
 			elif reloadTripleBullet > 0:
-				bullets.append(projectile(round(sprite.x + width // 2) , round(sprite.y + width // 2), 6,
-				(0, 200, 0), facing, 8))
-				bullets.append((projectile(round(sprite.x + width // 2) , round(sprite.y + width // 2), 6,
-				(0, 200, 0), facing, 8,1)))
-				bullets.append((projectile(round(sprite.x + width // 2) , round(sprite.y + width // 2), 6,
-				(0, 200, 0), facing, 8,2)))
+				bullets.append(projectile(sprite.rect.centerx , sprite.rect.centery, 6,
+											(0, 200, 0), facing, 8))
+				bullets.append((projectile(sprite.rect.centerx , sprite.rect.centery, 6,
+											(0, 200, 0), facing, 8,1)))
+				bullets.append((projectile(sprite.rect.centerx , sprite.rect.centery, 6,
+											(0, 200, 0), facing, 8,2)))
 				reloadTripleBullet -= 1
-			else:
-				bullets.append(projectile(round(sprite.x + width// 2), round(sprite.y + width// 2), 6, (0, 200, 0),
-				facing,8))
 
+			else: # classic bullets
+				bullets.append(projectile(sprite.rect.centerx , sprite.rect.centery, 6, (0, 200, 0),
+											facing,8))
 
-	if keys[pygame.K_LEFT] and sprite.x + sprite.configure/3 > 0:
-		sprite.x -= sprite.vel
-		sprite.left = True
-		sprite.right = False
-	elif keys[pygame.K_RIGHT] and sprite.x + sprite.configure/3 < display_dimensions[0] - width - sprite.vel:
-		print(width,sprite.x)
-		sprite.x += sprite.vel
-		sprite.left = False
-		sprite.right = True
-	else:
-		sprite.right = False
-		sprite.left = False
-		sprite.walkCount = 0
-	if not (sprite.isJump):
-		if keys[pygame.K_UP]:
-			sprite.isJump = True
-			sprite.walkCount = 0
-	else:
-		if sprite.jumpCount >= -10:
-			neg = 1
-			if sprite.jumpCount < 0:
-				neg = -1
-			if neg == 1:
-				sprite.y -= (sprite.jumpCount ** 2) * .5 * neg
-			if neg == -1 and keys[pygame.K_g] and activateGlideSlime == True:
-				sprite.y -= 3 * neg
-				sprite.jumpCount = -1
-			elif neg == -1:
-				sprite.y -= (sprite.jumpCount ** 2) * .5 * neg
-			sprite.jumpCount -= 1
+	if not gameOver: # the slime player can move only if he is alive
+		sprite.move()
 
-		else:
-			sprite.isJump = False
-			sprite.jumpCount = 10
 
 	GameWindow()
 pygame.quit()
-
