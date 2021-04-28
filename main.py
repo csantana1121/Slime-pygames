@@ -22,8 +22,9 @@ global display_dimensions, scale, fullscreened
 display_dimensions = [384,216]
 fullscreened = load_video_settings()
 global win
-pygame.mixer.music.load('Data/level1.mp3')
+level1Music = pygame.mixer.Sound('Data/level1.mp3')
 level2Music = pygame.mixer.Sound('Data/level2.mp3')
+MenuMusic = pygame.mixer.Sound('Data/menu.mp3')
 jumpSound = pygame.mixer.Sound('Data/slime animations/jump.wav')
 powerup = pygame.mixer.Sound('Data/slime animations/powerup.wav')
 dieSound = pygame.mixer.Sound('Data/slime animations/die.wav')
@@ -151,6 +152,9 @@ def run_menu():
 	global up_key, down_key, right_key, left_key, power_key, select_key, enter_key
 	menu_bar = pygame.image.load('Data/menu_bar.png')
 	title_img = pygame.image.load('Data/SlimeByte.png')
+	pygame.mixer.music.pause()
+	pygame.mixer.music.load('Data/menu.mp3')
+	pygame.mixer.music.play()
 	selection = 0
 	menu_layout = ['Play', 'Options', 'Quit']
 	run = True
@@ -822,6 +826,7 @@ def load_level_1():
 	global explosionsList, enemies, gameOver, flagRect, current_level
 
 	pygame.mixer.music.pause()
+	pygame.mixer.music.load('Data/level1.mp3')
 	pygame.mixer.music.play()
 
 	current_level = 1
